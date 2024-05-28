@@ -1,3 +1,4 @@
+"use client"
 import useSelectAppointment from '@/hooks/useSelectAppointment'
 import { PhysicianProfile } from '@/types/appointment'
 import convertDayTime from '@utils/convertDayTime'

@@ -41,7 +41,7 @@ const PhysicainCardPrimary = ({
 
     return (
         <LinkElement
-            link={`Physician/${physicianProfileUrl}`}
+            link={`Physician?url=${physicianProfileUrl}`}
             className={cn(
                 `bg-white rounded-sm group   transition-all duration-300 w-[20rem] shadow-shadow_category min-h-[14.375rem]  flex justify-between items-start flex-col`,
                 " hover:border-[#006A67] hover:shadow-hover"

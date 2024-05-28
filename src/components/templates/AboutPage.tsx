@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import TitlePagesMobile from '@modules/titles/TitlePagesMobile'
 import priceSplitter from '@utils/priceSplitter'

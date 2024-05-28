@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import TitleHeading from '@modules/titles/TitleHeading'
 import FaqPage from '@templates/FaqPage'

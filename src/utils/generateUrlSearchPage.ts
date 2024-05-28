@@ -1,43 +1,35 @@
 const generateUrlSearchPage = (parametrs: {
-    specialty: string,
-    consultingPlan: string,
-    [key: string]: any;
-}, queries: {
-    gender: string,
-    page: string,
-    disease: string,
-    sign: string,
-    service: string,
-    search_key : string,
-    city: string,
-    // itemsCountPerPage: string,
-    [key: string]: any
+  specialty: string;
+  consultingPlan: string;
+  gender: string;
+  page: string;
+  disease: string;
+  sign: string;
+  service: string;
+  search_key: string;
+  city: string;
+  // itemsCountPerPage: string,
 }) => {
+  const {
+    city,
+    consultingPlan,
+    disease,
+    gender,
+    page,
+    search_key,
+    service,
+    sign,
+    specialty,
+  } = parametrs;
 
-    let parametrsUrl: string = "";
-    let queriesUrl : string = ""
-    let isQuery: boolean = false
+  let url = `?${specialty ? `specialty=${specialty}` : ""}${
+    city ? `&city=${city}` : ""
+  }${consultingPlan ? `&consultingPlan=${consultingPlan}` : ""}${
+    disease ? `&disease=${disease}` : ""
+  }${gender ? `&gender=${gender}` : ""}${page ? `&page=${page}` : ""}${
+    search_key ? `&search_key=${search_key}` : ""
+  }${service ? `&service=${service}` : ""}${sign ? `&sign=${sign}` : ""}`;
+  return url;
+};
 
-    for (let p in parametrs) {
-        if (parametrs[p].trim() !== "") {
-            parametrsUrl = `${parametrsUrl}/${p}/${parametrs[p]}`
-        }
-    }
-    
-    for (let q in queries) {
-        if (queries[q].trim() !== ""&& !isQuery) {
-            isQuery = true
-            queriesUrl = `${queriesUrl}?`
-        }
-        
-        if (queries[q].trim() !== "") {
-            queriesUrl = `${queriesUrl}${q}=${queries[q]}${Object.keys(queries).indexOf(q) === Object.keys(queries).length - 1 ? "" :  "&" }`
-        }
-
-    }
-    
-    return `${parametrsUrl}${queriesUrl}`
-}
-
-
-export default generateUrlSearchPage
+export default generateUrlSearchPage;

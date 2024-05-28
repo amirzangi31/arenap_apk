@@ -1,3 +1,4 @@
+"use client"
 import ArenapPage from '@/components/templates/ArenapPage'
 import React from 'react'
 

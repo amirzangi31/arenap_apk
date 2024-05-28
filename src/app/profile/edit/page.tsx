@@ -1,4 +1,4 @@
-
+"use client"
 import EditProfilePage from '@templates/profile/EditProfilePage'
 import React from 'react'
 

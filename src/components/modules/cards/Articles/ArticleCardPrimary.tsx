@@ -11,7 +11,7 @@ const ArticleCardPrimary = (props: ArticleCardType) => {
     const { id, title, description, image, date, author } = props
     return (
         <LinkElement
-            link={`blog/${id}`}
+            link={`blog?title=${id}`}
             className={cn(
                 `p-2 h-[16.25rem] group w-[11.25rem] flex justify-between items-start flex-col  bg-white rounded-sm`,
                 {

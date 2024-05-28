@@ -1,18 +1,20 @@
-
-
-import { getBestPhysician, getNewestPhysician } from "@/services/physicians/physician"
+"use client"
 import HomePage from "@templates/HomePage"
+import useHomePageData from "@/hooks/useHomePageData"
+import LoadingPage from "./loading"
 
 
 
-export default async function Home() {
-  const ratedPhysicians = await getBestPhysician(0, 0, 1, 12)
-  const newestPhysicians = await getNewestPhysician();
 
-  
+export default function Home() {
+  const { bestPhysicians, newestPhysicians } = useHomePageData()
+
+
 
 
   return (
-    <HomePage physicians={ratedPhysicians} newestPhysicians={newestPhysicians} />
+    <>
+      {bestPhysicians.isLoading && newestPhysicians.isLoading ? <LoadingPage />  : <HomePage newestPhysicians={newestPhysicians.data} physicians={bestPhysicians.data} />}
+    </>
   )
 }

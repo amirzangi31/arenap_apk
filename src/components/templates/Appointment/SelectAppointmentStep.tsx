@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useState } from 'react'
 import { Firstppointment, PhysicianProfile, PhysicianProfileCalendar } from '@/types/appointment'
 import TurnsIcon from '@icons/menu/TurnsIcon'

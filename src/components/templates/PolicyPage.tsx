@@ -1,4 +1,4 @@
-
+"use client"
 import TitlePagesMobile from '@modules/titles/TitlePagesMobile'
 import TitleHeading from '@modules/titles/TitleHeading'
 import BaseH2Card from '../modules/cards/BaseH2Card'

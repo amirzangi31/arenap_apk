@@ -21,7 +21,12 @@ const nextConfig = {
                 pathname: '/TextConsultationFiles/**',
             },
         ],
+        unoptimized: true
     },
+    trailingSlash: true,
+    swcMinify: true,
+    reactStrictMode: true,
+    output: "export"
 }
 
 const withNextIntl = require("next-intl/plugin")(

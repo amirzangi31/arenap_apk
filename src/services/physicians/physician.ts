@@ -1,5 +1,6 @@
+import { PhysicainProfileType } from "@/types/physicianProfile";
+import { apiDomainNobat } from "../getApiUrl";
 import urls from "../urls";
-import { apiDomainNobat } from "../getApiUrlServer";
 
 const getNewestPhysician = async () => {
   try {
@@ -10,7 +11,6 @@ const getNewestPhysician = async () => {
         headers: {
           "Content-Type": "application/json",
         },
-        next: { revalidate: 60 * 60 * 24 * 1 }, //one week ,
       }
     );
     const result = await res.json();
@@ -18,9 +18,7 @@ const getNewestPhysician = async () => {
   } catch (error) {
     console.log(error);
   }
-}
-
-
+};
 
 const getBestPhysician = async (
   provinceId: number,
@@ -43,7 +41,6 @@ const getBestPhysician = async (
         headers: {
           "Content-Type": "application/json",
         },
-        next: { revalidate: 60 * 60 * 24 * 7 }, //one week ,
       }
     );
     const result = await res.json();
@@ -53,23 +50,32 @@ const getBestPhysician = async (
   }
 };
 
-const getProfilePhysician = async (physicianProfileUrl: string) => {
+const getProfilePhysician = async (
+  physicianProfileUrl: string
+) => {
   try {
     const res = await fetch(
-      `${apiDomainNobat}${urls.physician.physicianProfile.url}${physicianProfileUrl}`,
-      {
-        next: { revalidate: 60 * 60 * 24 * 3 }, //three days  
-      }
+      `${apiDomainNobat}${urls.physician.physicianProfile.url}${physicianProfileUrl}`
     );
     const data = await res.json();
-
     return data;
   } catch (error) {
     console.log(error);
   }
 };
 
+const getPhysicianDetail = async (slug: string) => {
+  const res = await fetch(
+    `${apiDomainNobat}${urls.physician.physicianProfile.url}${slug}`
+  );
+  const {value} = await res.json();
 
+  return value;
+};
 
-
-export { getBestPhysician, getProfilePhysician, getNewestPhysician };
+export {
+  getBestPhysician,
+  getProfilePhysician,
+  getNewestPhysician,
+  getPhysicianDetail,
+};

@@ -4,7 +4,7 @@ import cn from '@/utils/clsxFun'
 import CloseButton from '@elements/CloseButton'
 import ArrowLeft from '@icons/ArrowLeft'
 import ButtonElement from '@elements/ButtonElement'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { SpecialityType } from '@/types/global'
 import genderContent from '@/data/genderContent'
 import plansContent from '@/data/plansContent'
@@ -15,6 +15,7 @@ import { DiseaseType, ServiceType, SignType } from '@/types/search'
 import { specialtyBelongings } from '@/services/specialtyBelongings/specialtyBelongings'
 import Loader from '@/components/elements/Loader'
 import { useCookies } from 'react-cookie'
+import { useQueryClient } from '@tanstack/react-query'
 
 
 
@@ -24,15 +25,15 @@ export interface SearchSectionPrimaryProps {
     closeFilterHandler: () => void;
     specialities: SpecialityType[]
     slugs?: {
-        cityName: string,
-        specialty: string,
-        consultingPlan: string,
-        search_key: string,
-        page: string,
-        disease: string,
-        sign: string,
-        service: string,
-        gender: string
+        city?: string,
+        specialty?: string,
+        consultingPlan?: string,
+        search_key?: string,
+        page?: string,
+        disease?: string,
+        sign?: string,
+        service?: string,
+        gender?: string
     },
     searchText: string,
     services: ServiceType[],
@@ -40,21 +41,17 @@ export interface SearchSectionPrimaryProps {
     diseases: DiseaseType[],
     getDisease: (enName: string) => void,
     loading: boolean,
-    searchParams?: {
-        search_key: string,
-        page: string,
-        disease: string,
-        sign: string,
-        service: string,
-        gender: string
-    }
+
 }
 
 
 
 const SearchSectionPrimary = (props: SearchSectionPrimaryProps) => {
-    const { specialities, slugs, searchText, services, showFilters, closeFilterHandler, diseases, signs, loading, getDisease, searchParams } = props
+    const { specialities, slugs, searchText, services, showFilters, closeFilterHandler, diseases, signs, loading, getDisease } = props
     const [cookies] = useCookies(["cityInfo"])
+    const queryClient = useQueryClient();
+
+
 
     const genders = [...genderContent]
     const plans = [...plansContent]
@@ -71,7 +68,7 @@ const SearchSectionPrimary = (props: SearchSectionPrimaryProps) => {
     })
     const [searchParametrs, setSearchParametrs] = useState({
         search_key: slugs?.search_key ? slugs?.search_key : "",
-        cityName: slugs?.cityName ? slugs?.cityName : "",
+        cityName: slugs?.city ? slugs?.city : "",
         gender: slugs?.gender ? slugs?.gender : "",
         specialty: slugs?.specialty ? slugs?.specialty : "",
         disease: slugs?.disease ? slugs?.disease : "",
@@ -90,6 +87,9 @@ const SearchSectionPrimary = (props: SearchSectionPrimaryProps) => {
         ConsultingPlan: slugs?.consultingPlan ? planNameConvert(slugs.consultingPlan) : "پلن مشاوره",
     })
 
+
+
+
     const openFilterCard = (fitlerIndex: number | null) => {
         setActiveCard(fitlerIndex)
     }
@@ -107,20 +107,15 @@ const SearchSectionPrimary = (props: SearchSectionPrimaryProps) => {
     const serachedSigns = signs?.filter(item => item.name.toLowerCase().includes(searchsFilterCards.signs.toLocaleLowerCase()))
 
 
-    const pathName = usePathname()
+    
 
-    const filterHandler = () => {
-
-        // if (pathName === "/physicians") {
-        //     return
-        // }
+    const filterHandler = async () => {
 
         const url = generateUrlSearchPage({
             specialty: searchParametrs.specialty,
             consultingPlan: searchParametrs.consultingPlan,
-        }, {
             disease: searchParametrs.disease,
-            city: slugs?.cityName ? slugs.cityName : cookies.cityInfo ? cookies.cityInfo.slug : "",
+            city: slugs?.city ? slugs.city : cookies.cityInfo ? cookies.cityInfo.slug : "",
             sign: searchParametrs.sign,
             service: searchParametrs.service,
             gender: searchParametrs.gender,
@@ -222,6 +217,7 @@ const SearchSectionPrimary = (props: SearchSectionPrimaryProps) => {
                                     }
                                     <span>{item.specialityTitle}</span>
                                     <input id={`specialities-${index}`} type="radio" name='specialty' className='hidden' onChange={() => {
+                                        
                                         setSearchParametrs({
                                             ...searchParametrs,
                                             specialty: item.enName

@@ -9,12 +9,10 @@ import CloseIcon from '@icons/CloseIcon'
 import { useDebouncedCallback } from 'use-debounce'
 import { useCookies } from 'react-cookie'
 import { usePathname, useRouter } from 'next/navigation'
-import Loader from '@elements/Loader'
 import FilterTag from '../elements/FilterTag'
 import InfiniteScroll from "react-infinite-scroll-component";
 import TitlePagesMobile from '../modules/titles/TitlePagesMobile'
 import { SpecialityType } from '@/types/global'
-import generateUrlSearchPage from '@/utils/generateUrlSearchPage'
 import useCity from '@/hooks/useCity'
 import convertGender from '@/utils/convertGender'
 import planNameConvert from '@/utils/planNameConvert'
@@ -26,46 +24,28 @@ import { DiseaseType, PhysicianDataSearch, ServiceType, SignType } from '@/types
 import { specialtyBelongings } from '@/services/specialtyBelongings/specialtyBelongings'
 import SearchCardPrimary from '../modules/cards/Search/SearchCardPrimary'
 import PhysicianLoadingPrimaryCard from '../modules/cards/Skeletons/PhysicianLoadingPrimaryCard'
-import { apiDomainNobat } from '@/services/getApiUrl'
-import urls from '@/services/urls'
-import Toastify from '../elements/toasts/Toastify'
+import { SlugsType } from '@/app/physicians/page'
+import generateUrlSearchPage from '@/utils/generateUrlSearchPage'
 
 
 
 export type PhysiciansPageProps = {
-    slugs?: {
-        cityName: string,
-        specialty: string,
-        consultingPlan: string,
-        search_key: string,
-        page: string,
-        disease: string,
-        sign: string,
-        service: string,
-        gender: string
-    },
     searchKey?: string | undefined,
     specialities: SpecialityType[],
     services: ServiceType[],
     searchData: PhysicianDataSearch[],
-    searchParams: {
-        search_key: string,
-        page: string,
-        disease: string,
-        sign: string,
-        service: string,
-        gender: string
-    },
-    hasMore: boolean
+    hasMore: boolean,
+    slugs: SlugsType,
+    fetchMoreData: () => void,
+    loadingData: boolean,
+    fetchMoreLoading: boolean
 }
 
 
 const PhysiciansPage = (props: PhysiciansPageProps) => {
-    const { specialities, slugs, services, searchData, searchParams, hasMore } = props
-    const [loadingData, setLoadingData] = useState(true)
-    const [searchDataClient, setSearchDataClient] = useState<PhysicianDataSearch[] | []>([])
-    const [hasMoreSatet, setHasMoreState] = useState(hasMore)
-    const [page, setPage] = useState(1)
+    const { specialities, slugs, services, searchData, hasMore, fetchMoreData, loadingData, fetchMoreLoading } = props
+
+
     const pathName = usePathname()
     const [diseasesLoading, setDiseasesLoading] = useState(false)
     const [searchText, setSearchText] = useState(slugs?.search_key ? slugs?.search_key : "")
@@ -89,25 +69,25 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
         }
     }, [])
 
-    useEffect(() => {
-        setSearchDataClient(searchData === undefined ? [] : searchData)
-        setLoadingData(false)
-    }, [searchData])
+
+
+
+
 
     const [cookies] = useCookies(["cityInfo"])
     const [showFilters, setShowFilters] = useState(false)
     const [infoSearch, setInfoSearch] = useState({
-        city: slugs?.cityName ? slugs.cityName : ""
+        city: slugs?.city ? slugs.city : ""
     })
 
 
+
     const debouncedTextSearch = useDebouncedCallback(() => {
-        
+
         const url = generateUrlSearchPage({
             consultingPlan: slugs?.consultingPlan ? slugs.consultingPlan : "",
             specialty: slugs?.specialty ? slugs.specialty : "",
-        }, {
-            city: slugs?.cityName ? slugs.cityName : cookies.cityInfo ? cookies.cityInfo.slug : "",
+            city: slugs?.city ? slugs.city : cookies.cityInfo ? cookies.cityInfo.slug : "",
             disease: slugs?.disease ? slugs.disease : "",
             gender: slugs?.gender ? slugs.gender : "",
             page: slugs?.page ? slugs.page : "",
@@ -117,44 +97,14 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
         })
         router.push(`/physicians${url}`)
     }, 750)
-
     useEffect(() => {
 
         debouncedTextSearch()
-
     }, [searchText, cookies?.cityInfo])
 
     const { provinces, setAllProvince } = useCity()
 
-    const fetchMoreData = () => {
-        setLoadingData(true)
-        fetch
-            (
-                `${apiDomainNobat}${urls.advanceSearch.serach.url}?Filter=${searchText}&CityName=${cookies.cityInfo ? cookies.cityInfo.slug : ""}&Gender=${slugs?.gender ? slugs.gender : "0"}&Specialty=${slugs?.specialty ? slugs.specialty : ""}&Disease=${slugs?.disease ? slugs.disease : ""}&Sign=${slugs?.sign ? slugs.sign : ""}&Service=${slugs?.service ? slugs.service : ""}&ConsultingPlan=${slugs?.consultingPlan ? slugs.consultingPlan : "All"}&PageNumber=${page + 1}&ItemsCountPerPage=10`,
-            )
-            .then((res) => res.json()).then(data => {
-
-                if (data?.value === null) {
-                    setSearchDataClient([...searchDataClient]);
-                    setHasMoreState(false);
-                    return;
-                }
-                setSearchDataClient([...searchDataClient, ...data.value?.items]);
-                setHasMoreState(
-                    data.value.currentPage === data.value.totalPages
-                        ? false
-                        : true
-                );
-                setPage(data.value.currentPage);
-                setLoadingData(false)
-            })
-            .catch((error) => {
-                console.log(error);
-                setLoadingData(false)
-                Toastify("error", "خطایی رخ داده است");
-            });
-    }
-
+    
 
     return (
         <>
@@ -187,9 +137,9 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
             <header className='w-full rounded-sm shadow-shadow_category bg-white p-4'>
                 {pathName !== "/physicians" ? <h1 className='text-lg font-bold text-center' >
                     <span className=''>دکترهای </span>
-                    {slugs?.specialty ? (<LinkElement className='text-primary underline underline-offset-4 ' link={`physicians/specialty/${slugs.specialty}`}>{specialities.find((item) => item.enName === slugs.specialty)?.specialityTitle} </LinkElement>) : null}
-                    {slugs?.cityName ? (<>
-                        در شهر <LinkElement className='text-primary underline underline-offset-4 ' link={`physicians/city/${slugs.cityName}`}>
+                    {slugs?.specialty ? (<LinkElement className='text-primary underline underline-offset-4 ' link={`physicians?specialty=${slugs.specialty}`}>{specialities.find((item) => item.enName === slugs.specialty)?.specialityTitle} </LinkElement>) : null}
+                    {slugs?.city ? (<>
+                        در شهر <LinkElement className='text-primary underline underline-offset-4 ' link={`physicians/city?name=${slugs.city}`}>
                             {provinces.find((item: {
                                 cityId: number,
                                 cityName: string,
@@ -197,7 +147,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                 provinceId: number,
                                 provinceName: string,
                                 cityEnName: string
-                            }) => item.cityEnName === slugs?.cityName)?.cityName
+                            }) => item.cityEnName === slugs?.city)?.cityName
                             }
                         </LinkElement></>) : (<span> در آرناپ</span>)}
                 </h1> : null}
@@ -207,7 +157,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
 
             {/* ----------section------------- */}
             {/* tags in mobile */}
-            {pathName !== "/physicians" || Object.keys(searchParams).length ? (
+            {pathName !== "/physicians" || Object.keys(slugs).length ? (
                 <section className='md:hidden pt-4 '>
                     <Swiper
                         spaceBetween={10}
@@ -219,7 +169,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         dir="rtl"
                     >
 
-                        {slugs?.cityName ?
+                        {slugs?.city ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={provinces.find((item: {
                                     cityId: number,
@@ -228,20 +178,19 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     provinceId: number,
                                     provinceName: string,
                                     cityEnName: string
-                                }) => item.cityEnName === slugs?.cityName)?.cityName} handler={() => {
+                                }) => item.cityEnName === slugs?.city)?.cityName} handler={() => {
+
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                         specialty: slugs?.specialty ? slugs?.specialty : "",
-                                    },
-                                        {
-                                            city: "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        city: "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                     setAllProvince()
 
@@ -251,19 +200,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         {slugs?.specialty ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={specialities.find((item) => item.enName === slugs.specialty)?.specialityTitle} handler={() => {
+
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                         specialty: "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -271,19 +219,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         {slugs?.service ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={services.find((item) => item.enName === slugs.service)?.name} handler={() => {
+
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
-                                        specialty: slugs?.specialty ? slugs.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        specialty: slugs?.specialty ? slugs?.specialty : "",
+                                        city: "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -293,17 +240,15 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                 <FilterTag id={1} title={diseases.find((item) => item.enName === slugs.disease)?.name} handler={() => {
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
-                                        specialty: slugs?.specialty ? slugs.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        specialty: slugs?.specialty ? slugs?.specialty : "",
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -311,19 +256,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         {slugs?.sign ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={signs.find((item) => item.enName === slugs.sign)?.name} handler={() => {
+
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
-                                        specialty: slugs?.specialty ? slugs.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: "",
-                                        })
+                                        specialty: slugs?.specialty ? slugs?.specialty : "",
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -331,19 +275,19 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         {slugs?.gender ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={convertGender(slugs.gender)} handler={() => {
+
+
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                         specialty: slugs?.specialty ? slugs?.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -351,19 +295,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                         {slugs?.consultingPlan ?
                             <SwiperSlide className='swiper_width_auto' >
                                 <FilterTag id={1} title={planNameConvert(slugs.consultingPlan)} handler={() => {
+
                                     const url = generateUrlSearchPage({
-                                        consultingPlan: "",
+                                        consultingPlan: "All",
                                         specialty: slugs?.specialty ? slugs?.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: slugs?.search_key ? slugs.search_key : "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: slugs?.search_key ? slugs.search_key : "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
                                 }} />
                             </SwiperSlide> : null
@@ -375,22 +318,20 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     const url = generateUrlSearchPage({
                                         consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                         specialty: slugs?.specialty ? slugs?.specialty : "",
-                                    },
-                                        {
-                                            city: slugs?.cityName ? slugs?.cityName : "",
-                                            disease: slugs?.disease ? slugs?.disease : "",
-                                            gender: slugs?.gender ? slugs?.gender : "",
-                                            page: slugs?.page ? slugs?.page : "",
-                                            search_key: "",
-                                            service: slugs?.service ? slugs?.service : "",
-                                            sign: slugs?.sign ? slugs?.sign : "",
-                                        })
+                                        city: slugs?.city ? slugs?.city : "",
+                                        disease: slugs?.disease ? slugs?.disease : "",
+                                        gender: slugs?.gender ? slugs?.gender : "",
+                                        page: slugs?.page ? slugs?.page : "",
+                                        search_key: "",
+                                        service: slugs?.service ? slugs?.service : "",
+                                        sign: slugs?.sign ? slugs?.sign : "",
+                                    })
                                     router.push(`/physicians${url}`)
+                                    setSearchText("")
                                 }} />
                             </SwiperSlide> : null
                         }
                     </Swiper>
-
                 </section>
             ) : null}
             {/* ----------section------------- */}
@@ -425,34 +366,32 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                 {/* ----------section------------- */}
                 {/* search section */}
 
-                <SearchSectionPrimary searchParams={searchParams} loading={diseasesLoading} getDisease={getDiseaseHandler} services={services} diseases={diseases} signs={signs} searchText={searchText} showFilters={showFilters} closeFilterHandler={() => setShowFilters(false)} specialities={specialities} slugs={props.slugs} />
+                <SearchSectionPrimary loading={diseasesLoading} getDisease={getDiseaseHandler} services={services} diseases={diseases} signs={signs} searchText={searchText} showFilters={showFilters} closeFilterHandler={() => setShowFilters(false)} specialities={specialities} slugs={slugs} />
 
                 {/* ----------section------------- */}
 
                 {/* ----------section------------- */}
                 {/* Search content */}
                 <section className='w-full'>
-                    {pathName !== "/physicians" || Object.keys(searchParams).length ? (
+                    {pathName !== "/physicians" || Object.keys(slugs).length ? (
                         <div className='hidden md:flex shadow-shadow_category justify-start items-center  gap-2 w-full text-md p-2 bg-white rounded-sm min-h-[2.8125rem] mb-4'>
                             <p className='font-bold text-primary min-w-fit'>نتایج فیلتر : </p>
                             <div className='flex justify-start items-center gap-2 flex-wrap'>
                                 {
-                                    slugs?.cityName ?
+                                    slugs?.city ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                                 setAllProvince()
                                             }}>
@@ -463,7 +402,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                                 provinceId: number,
                                                 provinceName: string,
                                                 cityEnName: string
-                                            }) => item.cityEnName === slugs?.cityName)?.cityName}</span>
+                                            }) => item.cityEnName === slugs?.city)?.cityName}</span>
                                             <span ><CloseIcon color='stroke-gray-500' /> </span>
                                         </div> : null
                                 }
@@ -471,19 +410,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     slugs?.specialty ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}>
                                             <span className='text-gray-500'>{specialities.find((item) => item.enName === slugs.specialty)?.specialityTitle}</span>
@@ -494,19 +432,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     slugs?.disease ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}>
                                             <span className='text-gray-500'>{diseases.find((item) => item.enName === slugs.disease)?.name}</span>
@@ -517,19 +454,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     slugs?.sign ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}>
                                             <span className='text-gray-500'>{signs.find((item) => item.enName === slugs.sign)?.name}</span>
@@ -540,19 +476,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     slugs?.service ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
-                                                    specialty: slugs?.specialty ? slugs.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    specialty: slugs?.specialty ? slugs?.specialty : "",
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}>
                                             <span className='text-gray-500'>{services.find((item) => item.enName === slugs.service)?.name}</span>
@@ -563,19 +498,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                     slugs?.gender ?
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}>
                                             <span className='text-gray-500'>{convertGender(slugs.gender)}</span>
@@ -587,19 +521,18 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
 
                                             onClick={() => {
+
                                                 const url = generateUrlSearchPage({
-                                                    consultingPlan: "",
+                                                    consultingPlan: "All",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: slugs?.search_key ? slugs.search_key : "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: slugs?.search_key ? slugs.search_key : "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
                                             }}
 
@@ -613,21 +546,20 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                                         <div className='flex justify-center items-center gap-2 px-2 py-1 border border-gray-500 rounded-full cursor-pointer'
                                             onClick={() => {
                                                 setSearchText("")
+
                                                 const url = generateUrlSearchPage({
                                                     consultingPlan: slugs?.consultingPlan ? slugs?.consultingPlan : "",
                                                     specialty: slugs?.specialty ? slugs?.specialty : "",
-                                                },
-                                                    {
-                                                        city: slugs?.cityName ? slugs?.cityName : "",
-                                                        disease: slugs?.disease ? slugs?.disease : "",
-                                                        gender: slugs?.gender ? slugs?.gender : "",
-                                                        page: slugs?.page ? slugs?.page : "",
-                                                        search_key: "",
-                                                        service: slugs?.service ? slugs?.service : "",
-                                                        sign: slugs?.sign ? slugs?.sign : "",
-                                                    })
+                                                    city: slugs?.city ? slugs?.city : "",
+                                                    disease: slugs?.disease ? slugs?.disease : "",
+                                                    gender: slugs?.gender ? slugs?.gender : "",
+                                                    page: slugs?.page ? slugs?.page : "",
+                                                    search_key: "",
+                                                    service: slugs?.service ? slugs?.service : "",
+                                                    sign: slugs?.sign ? slugs?.sign : "",
+                                                })
                                                 router.push(`/physicians${url}`)
-
+                                                setSearchText("")
                                             }}
                                         >
                                             <span className='text-gray-500'>{slugs.search_key}</span>
@@ -640,7 +572,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
                     ) : null}
 
                     {
-                        !loadingData && !searchData &&
+                        !loadingData && !searchData.length &&
                         <div className='bg-white p-5 shadow-shadow_category rounded-sm '>
                             <p className='text-center font-bold'>متاسفانه دکتری با فیلترهای جستجوی شما پیدا نشد</p>
                             <p className='text-center text-md max-w-[16rem] mx-auto mt-4'>برای داشتن نتایج بهتر فیلترهای جستجوی خود را عوض کنید</p>
@@ -655,19 +587,19 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
 
                     <div className=' flex justify-between items-start gap-2 w-full'>
                         <InfiniteScroll
-                            dataLength={searchDataClient ? searchDataClient.length : 0}
+                            dataLength={searchData ? searchData.length : 0}
                             next={fetchMoreData}
-                            hasMore={hasMoreSatet}
+                            hasMore={hasMore}
                             loader={<span></span>}
                         // endMessage={<div className="text-error font-bold">پایان😁</div>}
                         >
-                            {searchDataClient?.map((item) => (
+                            {searchData?.map((item) => (
                                 <SearchCardPrimary key={item.id} {...item} online={item.immediateConsultation} freeMode={false} />
                             ))}
                         </InfiniteScroll>
 
                     </div>
-                    {loadingData ? <LoadingComponent /> : null}
+                    {fetchMoreLoading ? <LoadingComponent /> : null}
                 </section>
                 {/* ----------section------------- */}
             </main>
@@ -677,6 +609,7 @@ const PhysiciansPage = (props: PhysiciansPageProps) => {
 }
 
 export default PhysiciansPage
+
 const LoadingComponent = () => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 w-full mt-2">

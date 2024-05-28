@@ -62,7 +62,7 @@ const BlogPage = () => {
                         {articles.map((article : ArticleCardType) => (
                             <ArticleCardSecondary
                                 key={article.id}
-                                link={`blog/${article.id}`}
+                                link={`blog?title=${article.id}`}
                                 title={article.title}
                                 author={article.author}
                                 description={article.description}

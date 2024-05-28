@@ -1,3 +1,4 @@
+"use client"
 import AboutPage from "@/components/templates/AboutPage"
 
 

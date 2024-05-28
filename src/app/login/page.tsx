@@ -1,3 +1,5 @@
+"use client"
+
 import LoginPage from '@templates/LoginPage'
 import React from 'react'
 

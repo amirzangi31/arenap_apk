@@ -1,3 +1,4 @@
+"use client"
 import FavoritePage from '@templates/profile/FavoritePage'
 import React from 'react'
 

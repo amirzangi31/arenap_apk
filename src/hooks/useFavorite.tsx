@@ -8,10 +8,10 @@ const useFavorite = (physicianProfileId: string) => {
     const { isLogin } = useUserInfo()
 
     const userFavorite = useQuery(["userFavorite"], async () => {
-        if (isLogin === "authorization") {
+        if (isLogin === "authorization" && physicianProfileId) {
             const result = await isFavorite(physicianProfileId)
             return result
-        }else {
+        } else {
             return false
         }
 
@@ -49,13 +49,13 @@ const useFavorite = (physicianProfileId: string) => {
 
     return {
 
-        
+
         userFavorite: userFavorite?.data?.isFavorite,
         isLodingUserFavorite: userFavorite.isLoading,
         addFavorite: addFavoriteHandler?.mutate,
         deleteFavorite: deleteFavoriteHandler?.mutate,
-        likeLoading : userFavorite.isLoading || addFavoriteHandler.isLoading || deleteFavoriteHandler.isLoading
-        
+        likeLoading: userFavorite.isLoading || addFavoriteHandler.isLoading || deleteFavoriteHandler.isLoading
+
     }
 }
 

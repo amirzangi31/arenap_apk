@@ -6,8 +6,8 @@ import { useCookies } from 'react-cookie'
 
 
 const useCity = () => {
-    const queryClient = useQueryClient();
-    const [step, setStep] = useState<1 | 2>(1)
+    
+    
     const [isLoadingCity, setIsLoadingCity] = useState(true)
     const [cookies, setCookie, removeCookie] = useCookies(['cityInfo']);
     const [provinceInfo, setProvinceInfo] = useState({

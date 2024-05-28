@@ -237,7 +237,7 @@ const SearchHomePage = ({ physicians }: { physicians: RelatedPhysicianType[] }) 
                                     <div>
                                         <TitleSection title="پزشک" />
                                         <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-                                            {physicians.slice(0, 6).map((item, index) => <SearchSmallCard key={item.id} {...item} bg='md:bg-gray-100 bg-white' />)}
+                                            {physicians?.slice(0, 6).map((item, index) => <SearchSmallCard key={item.id} {...item} bg='md:bg-gray-100 bg-white' />)}
                                         </div>
                                     </div>
                                 </>
